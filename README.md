@@ -7,11 +7,12 @@
 
 ---
 
-## What it does
-SBS Image Mode
+# What it does
+
+## SBS Image Mode
 Load an existing side-by-side 3D image (from Owl3D, 3D cameras, etc.):
 
-## XREAL Glasses — One tap fullscreen. Image fills the 3840×1080 display correctly. No zooming, no fiddling.
+XREAL Glasses — One tap fullscreen. Image fills the 3840×1080 display correctly. No zooming, no fiddling.
 Wiggle 3D — Alternates left/right to create depth perception (no glasses needed).
 Anaglyph — Red/cyan mode for classic 3D glasses.
 Cross-eye — Free-viewing for stereo pair fusing.
