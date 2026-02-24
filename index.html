@@ -74,13 +74,14 @@
     display: flex; gap: 12px; align-items: center;
     opacity: 0; transition: opacity 0.3s;
   }
-  #parallax-viewer:hover #parallax-hint { opacity: 1; }
+  #parallax-viewer:hover #parallax-hint, #parallax-hint.visible { opacity: 1; }
   #parallax-hint button {
     background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
     padding: 5px 12px; border-radius: 999px; font: 500 12px 'DM Sans', sans-serif;
     cursor: pointer; transition: all 0.2s;
   }
   #parallax-hint button:hover { color: var(--danger); border-color: var(--danger); }
+  #parallax-hint button.gyro-active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
   .depth-slider { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); }
   .depth-slider input[type="range"] { width: 80px; accent-color: var(--accent); }
 
@@ -238,7 +239,8 @@
 <div id="parallax-viewer">
   <canvas id="parallax-canvas"></canvas>
   <div id="parallax-hint">
-    <span>Move mouse for parallax</span>
+    <span id="parallax-mode-label">Move mouse for parallax</span>
+    <button id="gyro-toggle">📱 Gyro</button>
     <div class="depth-slider"><span>Depth</span><input type="range" id="depth-intensity" min="1" max="40" value="12"></div>
     <button id="parallax-close">✕ Close</button>
   </div>
@@ -342,7 +344,7 @@
         <li>Switch to the <strong>Regular Photo</strong> tab</li>
         <li>Load any photo, tap <strong>"Generate Depth"</strong></li>
         <li>First time downloads a ~100MB AI model (cached after that)</li>
-        <li>Choose <strong>Parallax</strong> (mouse-tracked), <strong>Wiggle</strong>, or <strong>Anaglyph</strong></li>
+        <li>Choose <strong>Parallax</strong> (mouse or gyro), <strong>Wiggle</strong>, or <strong>Anaglyph</strong></li>
       </ol>
     </div>
     <div class="info-card">
@@ -350,7 +352,7 @@
       <ol>
         <li><strong>Wiggle 3D</strong> — alternates left/right to show depth</li>
         <li><strong>Anaglyph</strong> — red/cyan for classic 3D glasses</li>
-        <li><strong>Parallax</strong> — move your mouse to look around the scene</li>
+        <li><strong>Parallax</strong> — move your mouse or tilt your phone to look around the scene</li>
       </ol>
     </div>
   </div>
@@ -650,6 +652,7 @@ btnRGlasses.addEventListener('click', () => {
 
 // ── PARALLAX VIEWER ──
 let parallaxRAF = null, mouseX = 0.5, mouseY = 0.5;
+let gyroEnabled = false, gyroBaseAlpha = null, gyroBaseBeta = null, gyroPermGranted = false;
 
 function openParallax() {
   if (!regularImage || !depthMap) return;
@@ -663,8 +666,16 @@ function openParallax() {
   const depthR = resampleDepth(w, h);
 
   goFullscreen(parallaxViewer);
-  parallaxViewer.onmousemove = e => { mouseX = e.clientX / window.innerWidth; mouseY = e.clientY / window.innerHeight; };
-  parallaxViewer.ontouchmove = e => { e.preventDefault(); mouseX = e.touches[0].clientX / window.innerWidth; mouseY = e.touches[0].clientY / window.innerHeight; };
+
+  // Show controls persistently on touch devices
+  const isTouchDevice = 'ontouchstart' in window;
+  if (isTouchDevice) $('parallax-hint').classList.add('visible');
+
+  parallaxViewer.onmousemove = e => { if (!gyroEnabled) { mouseX = e.clientX / window.innerWidth; mouseY = e.clientY / window.innerHeight; } };
+  parallaxViewer.ontouchmove = e => { if (!gyroEnabled) { e.preventDefault(); mouseX = e.touches[0].clientX / window.innerWidth; mouseY = e.touches[0].clientY / window.innerHeight; } };
+
+  // Auto-enable gyro on mobile if permission was already granted
+  if (isTouchDevice && gyroPermGranted) enableGyro();
 
   function render() {
     const intensity = parseFloat(depthSlider.value);
@@ -686,10 +697,54 @@ function openParallax() {
   parallaxRAF = requestAnimationFrame(render);
 }
 
+// ── GYROSCOPE ──
+function onDeviceOrientation(e) {
+  if (!gyroEnabled) return;
+  // Set baseline on first reading
+  if (gyroBaseAlpha === null) { gyroBaseAlpha = e.gamma || 0; gyroBaseBeta = e.beta || 0; }
+  // gamma = left/right tilt (-90 to 90), beta = front/back tilt (-180 to 180)
+  const dx = ((e.gamma || 0) - gyroBaseAlpha);
+  const dy = ((e.beta || 0) - gyroBaseBeta);
+  // Map ±30 degrees to 0-1 range
+  mouseX = Math.max(0, Math.min(1, 0.5 + dx / 60));
+  mouseY = Math.max(0, Math.min(1, 0.5 + dy / 60));
+}
+
+async function enableGyro() {
+  // iOS 13+ requires permission request
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    try {
+      const perm = await DeviceOrientationEvent.requestPermission();
+      if (perm !== 'granted') { showToast('Gyroscope permission denied'); return; }
+    } catch { showToast('Gyroscope permission failed'); return; }
+  }
+  gyroPermGranted = true;
+  gyroEnabled = true;
+  gyroBaseAlpha = null; gyroBaseBeta = null; // Reset baseline
+  window.addEventListener('deviceorientation', onDeviceOrientation);
+  $('gyro-toggle').classList.add('gyro-active');
+  $('parallax-mode-label').textContent = 'Tilt phone for parallax';
+  showToast('Gyroscope enabled — tilt to look around');
+}
+
+function disableGyro() {
+  gyroEnabled = false;
+  window.removeEventListener('deviceorientation', onDeviceOrientation);
+  $('gyro-toggle').classList.remove('gyro-active');
+  $('parallax-mode-label').textContent = 'Move mouse for parallax';
+}
+
+$('gyro-toggle').addEventListener('click', () => {
+  if (gyroEnabled) disableGyro();
+  else enableGyro();
+});
+
 function closeParallax() {
   if (parallaxRAF) cancelAnimationFrame(parallaxRAF);
   parallaxViewer.classList.remove('active');
   parallaxViewer.onmousemove = null; parallaxViewer.ontouchmove = null;
+  disableGyro();
+  $('parallax-hint').classList.remove('visible');
   exitFullscreen();
 }
 $('parallax-close').addEventListener('click', closeParallax);
