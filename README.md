@@ -8,37 +8,31 @@
 ---
 
 ## What it does
+SBS Image Mode
+Load an existing side-by-side 3D image (from Owl3D, 3D cameras, etc.):
 
-- **XREAL / AR Glasses mode** — One tap fullscreen SBS. Image fills the entire 3840×1080 display correctly. No zooming, no fiddling.
-- **Wiggle 3D** — Rapidly alternates left/right eye views to create depth perception on any screen (no glasses needed).
-- **Anaglyph** — Red/cyan 3D for classic 3D glasses.
-- **Cross-eye** — Free-viewing mode for those who can cross their eyes to fuse stereo pairs.
+## XREAL Glasses — One tap fullscreen. Image fills the 3840×1080 display correctly. No zooming, no fiddling.
+Wiggle 3D — Alternates left/right to create depth perception (no glasses needed).
+Anaglyph — Red/cyan mode for classic 3D glasses.
+Cross-eye — Free-viewing for stereo pair fusing.
 
-## How to use
+## Regular Photo Mode
+Load any normal photo — AI estimates depth and converts it to 3D:
 
-### On XREAL glasses
+## Parallax — Move your mouse to look around the scene (like a 3D window).
+Wiggle / Anaglyph — Same glasses-free modes as SBS.
+XREAL Glasses — Generates an SBS pair from the depth map for fullscreen viewing.
 
-1. Open the page
-2. Plug in XREAL glasses via USB-C
-3. Put glasses in SBS mode (long-press brightness+ ~3 sec until chime)
-4. Load your SBS image
-5. Tap **"View on XREAL Glasses"** → fullscreen fills the display
-6. Tap to exit
-
-### On any screen (no glasses)
-
-1. Open the page in any browser
-2. Load your SBS image
-3. Choose **Wiggle 3D** or **Anaglyph**
-4. Adjust speed with the slider (wiggle mode)
+## AI Depth Model
+The "Regular Photo" mode uses Depth Anything V2 Small (~100MB) running directly in the browser via transformers.js. The model downloads from HuggingFace CDN on first use and is cached in the browser — subsequent uses load instantly. Nothing is stored on GitHub.
+Hosting on GitHub Pages
 
 
 ## Technical notes
-
-- Single HTML file, zero dependencies, zero build step
-- All processing happens client-side (images never leave your device)
-- Works offline once loaded
-- Anaglyph uses optimized luminance-based red/cyan separation
-- Wiggle speed is adjustable (50ms–500ms interval)
-
+Single HTML file, zero dependencies, zero build step
+All processing happens client-side (images never leave your device)
+Works offline once the AI model is cached
+Depth estimation takes 2–5s on PC, 5–15s on phone
+SBS generation uses pixel-shifting with disocclusion hole filling
+Anaglyph uses optimized luminance-based red/cyan separation
 ---
