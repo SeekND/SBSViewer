@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>SBS 3D Viewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,500;9..40,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0c;
+    --surface: #141418;
+    --surface2: #1e1e24;
+    --border: #2a2a32;
+    --text: #e8e6f0;
+    --text-dim: #8887a0;
+    --accent: #6ee7b7;
+    --accent2: #38bdf8;
+    --danger: #f87171;
+    --radius: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── FULLSCREEN SBS MODE ── */
+  #sbs-fullscreen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #000;
+    cursor: none;
+  }
+  #sbs-fullscreen img {
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    display: block;
+  }
+  #sbs-fullscreen.active { display: block; }
+
+  /* ── GLASSES-FREE CANVAS ── */
+  #viewer-canvas {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    background: #000;
+  }
+  #viewer-canvas.active { display: flex; align-items: center; justify-content: center; }
+  #viewer-canvas canvas { max-width: 100%; max-height: 100%; }
+  #viewer-controls {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    display: flex;
+    gap: 8px;
+    background: rgba(10,10,12,0.85);
+    backdrop-filter: blur(12px);
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  #viewer-canvas:hover #viewer-controls,
+  #viewer-controls:hover { opacity: 1; }
+  #viewer-controls button {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font: 500 13px 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  #viewer-controls button:hover { color: var(--text); border-color: var(--accent); }
+  #viewer-controls button.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+  /* ── LANDING / UI ── */
+  .app-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 60px 24px 100px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  header .badge {
+    display: inline-block;
+    font: 700 11px 'Space Mono', monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(110,231,183,0.08);
+    border: 1px solid rgba(110,231,183,0.2);
+    padding: 5px 14px;
+    border-radius: 999px;
+    margin-bottom: 20px;
+  }
+  header h1 {
+    font-size: clamp(28px, 6vw, 42px);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+  header h1 span { color: var(--accent); }
+  header p {
+    font-size: 15px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* ── DROP ZONE ── */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    background: var(--surface);
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(110,231,183,0.04);
+  }
+  .drop-zone .icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+    opacity: 0.6;
+  }
+  .drop-zone h3 { font-size: 16px; font-weight: 500; margin-bottom: 6px; }
+  .drop-zone p { font-size: 13px; color: var(--text-dim); }
+  .drop-zone input { display: none; }
+
+  /* ── PREVIEW ── */
+  .preview {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .preview.active { display: block; }
+  .preview-img-wrap {
+    position: relative;
+    background: #000;
+    line-height: 0;
+  }
+  .preview-img-wrap img {
+    width: 100%;
+    height: auto;
+    max-height: 300px;
+    object-fit: contain;
+  }
+  .preview-img-wrap .divider {
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 50%;
+    width: 2px;
+    background: var(--accent);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .preview-img-wrap .label-l, .preview-img-wrap .label-r {
+    position: absolute;
+    top: 8px;
+    font: 700 10px 'Space Mono', monospace;
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.7);
+    color: var(--text-dim);
+  }
+  .preview-img-wrap .label-l { left: 8px; }
+  .preview-img-wrap .label-r { right: 8px; }
+  .preview-info {
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .preview-info .name { color: var(--text); font-weight: 500; }
+
+  /* ── BUTTONS ── */
+  .actions {
+    display: grid;
+    gap: 12px;
+  }
+  .btn-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px 20px;
+    border-radius: var(--radius);
+    font: 600 14px 'DM Sans', sans-serif;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover:not(:disabled) { border-color: var(--accent2); color: var(--accent2); }
+
+  .btn .emoji { font-size: 18px; }
+
+  /* ── INFO CARDS ── */
+  .info-section {
+    margin-top: 56px;
+  }
+  .info-section h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-bottom: 12px;
+  }
+  .info-card h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--accent2);
+  }
+  .info-card p, .info-card ol {
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--text-dim);
+  }
+  .info-card ol { padding-left: 18px; }
+  .info-card ol li { margin-bottom: 4px; }
+  .info-card code {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--accent);
+  }
+
+  /* ── SPEED DIAL ── */
+  .speed-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .speed-control input[type="range"] {
+    width: 80px;
+    accent-color: var(--accent);
+  }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 999px;
+    font-size: 13px;
+    z-index: 99999;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 500px) {
+    .btn-group { grid-template-columns: 1fr; }
+    .app-container { padding: 36px 16px 80px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- FULLSCREEN SBS (for glasses) -->
+<div id="sbs-fullscreen">
+  <img id="sbs-fs-img" src="" alt="SBS 3D">
+</div>
+
+<!-- GLASSES-FREE VIEWER -->
+<div id="viewer-canvas">
+  <canvas id="glassless-canvas"></canvas>
+  <div id="viewer-controls">
+    <button data-mode="wiggle" class="active">Wiggle</button>
+    <button data-mode="anaglyph">Anaglyph</button>
+    <button data-mode="crosseye">Cross-eye</button>
+    <div class="speed-control">
+      <span>Speed</span>
+      <input type="range" id="wiggle-speed" min="50" max="500" value="150">
+    </div>
+    <button data-mode="close" style="color:var(--danger)">✕ Close</button>
+  </div>
+</div>
+
+<!-- LANDING UI -->
+<div class="app-container">
+  <header>
+    <div class="badge">Companion to 3D Window Viewer</div>
+    <h1>SBS <span>3D</span> Viewer</h1>
+    <p>Load a side-by-side image. View it in 3D on XREAL glasses (one tap) or without glasses (wiggle / anaglyph).</p>
+  </header>
+
+  <!-- Drop Zone -->
+  <div class="drop-zone" id="drop-zone">
+    <div class="icon">📷</div>
+    <h3>Drop an SBS image here</h3>
+    <p>or tap to browse &middot; PNG, JPG, WEBP</p>
+    <input type="file" id="file-input" accept="image/*">
+  </div>
+
+  <!-- Preview -->
+  <div class="preview" id="preview">
+    <div class="preview-img-wrap">
+      <img id="preview-img" src="" alt="Preview">
+      <div class="divider"></div>
+      <div class="label-l">LEFT</div>
+      <div class="label-r">RIGHT</div>
+    </div>
+    <div class="preview-info">
+      <span class="name" id="file-name">—</span>
+      <span id="file-dims">—</span>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button class="btn btn-primary" id="btn-glasses" disabled>
+      <span class="emoji">🥽</span> View on XREAL Glasses (Fullscreen SBS)
+    </button>
+    <div class="btn-group">
+      <button class="btn btn-secondary" id="btn-wiggle" disabled>
+        <span class="emoji">👀</span> Wiggle 3D
+      </button>
+      <button class="btn btn-secondary" id="btn-anaglyph" disabled>
+        <span class="emoji">🔴🔵</span> Anaglyph
+      </button>
+    </div>
+  </div>
+
+  <!-- Instructions -->
+  <div class="info-section">
+    <h2>📖 How to use</h2>
+
+    <div class="info-card">
+      <h4>XREAL Glasses (via phone)</h4>
+      <ol>
+        <li>Open this page on your <strong>Samsung S24 Ultra</strong> in Chrome</li>
+        <li>Plug in XREAL glasses via USB-C</li>
+        <li>Put glasses in SBS mode (long-press brightness+ ~3 sec)</li>
+        <li>Load your SBS image above</li>
+        <li>Tap <strong>"View on XREAL Glasses"</strong> — it goes fullscreen and fills the display</li>
+        <li>Tap the screen to exit</li>
+      </ol>
+    </div>
+
+    <div class="info-card">
+      <h4>Without glasses (on any screen)</h4>
+      <ol>
+        <li>Load your SBS image</li>
+        <li><strong>Wiggle 3D</strong> — rapidly alternates left/right eye to create depth perception</li>
+        <li><strong>Anaglyph</strong> — red/cyan mode, use classic 3D glasses if you have them</li>
+        <li>Speed slider controls the wiggle rate</li>
+      </ol>
+    </div>
+
+    <div class="info-card">
+      <h4>Sending images to Quest 3</h4>
+      <p>Unfortunately there's no "Phone Link" equivalent for Quest 3. Your best options:</p>
+      <ol>
+        <li><strong>USB cable</strong> — plug Quest 3 into PC, allow file access in headset, copy images to <code>Oculus/Screenshots</code></li>
+        <li><strong>Cloud storage</strong> — upload to Google Drive, open the Quest browser, download from there</li>
+        <li><strong>This webpage</strong> — open this same URL in the Quest 3 browser, load your image, and view it in wiggle/anaglyph mode right in VR</li>
+        <li>For dedicated SBS viewing on Quest: <strong>immerGallery</strong> (Meta Store) auto-detects SBS format</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──
+let sbsImage = null;        // original full SBS image (HTMLImageElement)
+let leftCanvas, rightCanvas; // split L/R as offscreen canvases
+let glasslessMode = 'wiggle';
+let wiggleTimer = null;
+let wiggleFrame = 0;
+
+// ── ELEMENTS ──
+const dropZone     = document.getElementById('drop-zone');
+const fileInput    = document.getElementById('file-input');
+const preview      = document.getElementById('preview');
+const previewImg   = document.getElementById('preview-img');
+const fileName     = document.getElementById('file-name');
+const fileDims     = document.getElementById('file-dims');
+const btnGlasses   = document.getElementById('btn-glasses');
+const btnWiggle    = document.getElementById('btn-wiggle');
+const btnAnaglyph  = document.getElementById('btn-anaglyph');
+const sbsFullscreen = document.getElementById('sbs-fullscreen');
+const sbsFsImg     = document.getElementById('sbs-fs-img');
+const viewerCanvas = document.getElementById('viewer-canvas');
+const glasslessCvs = document.getElementById('glassless-canvas');
+const ctx          = glasslessCvs.getContext('2d');
+const wiggleSpeed  = document.getElementById('wiggle-speed');
+const toast        = document.getElementById('toast');
+
+// ── FILE HANDLING ──
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files.length) loadFile(fileInput.files[0]); });
+
+function loadFile(file) {
+  if (!file.type.startsWith('image/')) { showToast('Please select an image file'); return; }
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      sbsImage = img;
+      previewImg.src = img.src;
+      fileName.textContent = file.name;
+      fileDims.textContent = `${img.naturalWidth} × ${img.naturalHeight}`;
+      preview.classList.add('active');
+
+      // Split L/R
+      splitSBS(img);
+
+      // Enable buttons
+      btnGlasses.disabled = false;
+      btnWiggle.disabled = false;
+      btnAnaglyph.disabled = false;
+
+      showToast(`Loaded: ${img.naturalWidth}×${img.naturalHeight}`);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function splitSBS(img) {
+  const w = img.naturalWidth;
+  const h = img.naturalHeight;
+  const halfW = Math.floor(w / 2);
+
+  leftCanvas = document.createElement('canvas');
+  leftCanvas.width = halfW;
+  leftCanvas.height = h;
+  leftCanvas.getContext('2d').drawImage(img, 0, 0, halfW, h, 0, 0, halfW, h);
+
+  rightCanvas = document.createElement('canvas');
+  rightCanvas.width = halfW;
+  rightCanvas.height = h;
+  rightCanvas.getContext('2d').drawImage(img, halfW, 0, halfW, h, 0, 0, halfW, h);
+}
+
+// ── XREAL GLASSES: FULLSCREEN SBS ──
+btnGlasses.addEventListener('click', () => {
+  if (!sbsImage) return;
+  sbsFsImg.src = sbsImage.src;
+  sbsFullscreen.classList.add('active');
+
+  // Try real fullscreen API (critical for filling 3840×1080 on glasses)
+  const el = sbsFullscreen;
+  const rfs = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+  if (rfs) rfs.call(el).catch(() => {});
+
+  showToast('Tap anywhere to exit');
+});
+
+sbsFullscreen.addEventListener('click', () => {
+  sbsFullscreen.classList.remove('active');
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+});
+
+// ── GLASSES-FREE VIEWING ──
+btnWiggle.addEventListener('click', () => openGlassless('wiggle'));
+btnAnaglyph.addEventListener('click', () => openGlassless('anaglyph'));
+
+document.querySelectorAll('#viewer-controls button[data-mode]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const mode = btn.dataset.mode;
+    if (mode === 'close') { closeGlassless(); return; }
+    glasslessMode = mode;
+    document.querySelectorAll('#viewer-controls button[data-mode]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    startGlassless();
+  });
+});
+
+wiggleSpeed.addEventListener('input', () => {
+  if (glasslessMode === 'wiggle') startGlassless();
+});
+
+function openGlassless(mode) {
+  if (!leftCanvas) return;
+  glasslessMode = mode;
+  viewerCanvas.classList.add('active');
+
+  // Update button states
+  document.querySelectorAll('#viewer-controls button[data-mode]').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+
+  // Size canvas to single eye
+  glasslessCvs.width = leftCanvas.width;
+  glasslessCvs.height = leftCanvas.height;
+
+  startGlassless();
+
+  // Fullscreen
+  const el = viewerCanvas;
+  const rfs = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+  if (rfs) rfs.call(el).catch(() => {});
+}
+
+function closeGlassless() {
+  stopWiggle();
+  viewerCanvas.classList.remove('active');
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+}
+
+function startGlassless() {
+  stopWiggle();
+
+  if (glasslessMode === 'wiggle') {
+    wiggleFrame = 0;
+    const interval = parseInt(wiggleSpeed.value);
+    wiggleTimer = setInterval(() => {
+      wiggleFrame = 1 - wiggleFrame;
+      ctx.drawImage(wiggleFrame === 0 ? leftCanvas : rightCanvas, 0, 0);
+    }, interval);
+    // Draw first frame immediately
+    ctx.drawImage(leftCanvas, 0, 0);
+
+  } else if (glasslessMode === 'anaglyph') {
+    renderAnaglyph();
+
+  } else if (glasslessMode === 'crosseye') {
+    // Show both side by side at half scale for cross-eye free viewing
+    glasslessCvs.width = leftCanvas.width * 2;
+    glasslessCvs.height = leftCanvas.height;
+    // Cross-eye: RIGHT on left, LEFT on right
+    ctx.drawImage(rightCanvas, 0, 0);
+    ctx.drawImage(leftCanvas, leftCanvas.width, 0);
+  }
+}
+
+function stopWiggle() {
+  if (wiggleTimer) { clearInterval(wiggleTimer); wiggleTimer = null; }
+}
+
+function renderAnaglyph() {
+  const w = leftCanvas.width;
+  const h = leftCanvas.height;
+  glasslessCvs.width = w;
+  glasslessCvs.height = h;
+
+  const leftData = leftCanvas.getContext('2d').getImageData(0, 0, w, h);
+  const rightData = rightCanvas.getContext('2d').getImageData(0, 0, w, h);
+  const output = ctx.createImageData(w, h);
+
+  const ld = leftData.data;
+  const rd = rightData.data;
+  const od = output.data;
+
+  for (let i = 0; i < ld.length; i += 4) {
+    // Left eye → red channel (optimized Dubois-like)
+    const lGray = ld[i] * 0.299 + ld[i+1] * 0.587 + ld[i+2] * 0.114;
+    // Right eye → cyan channels
+    const rGray = rd[i] * 0.299 + rd[i+1] * 0.587 + rd[i+2] * 0.114;
+
+    od[i]   = Math.min(255, lGray);           // R from left
+    od[i+1] = Math.min(255, rd[i+1] * 0.7 + rd[i+2] * 0.3); // G from right
+    od[i+2] = Math.min(255, rd[i+2]);         // B from right
+    od[i+3] = 255;
+  }
+
+  ctx.putImageData(output, 0, 0);
+}
+
+// ── ESC key to exit ──
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (sbsFullscreen.classList.contains('active')) {
+      sbsFullscreen.classList.remove('active');
+    }
+    if (viewerCanvas.classList.contains('active')) {
+      closeGlassless();
+    }
+  }
+});
+
+// Exit fullscreen events
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) {
+    // If we left fullscreen, close viewers
+    if (viewerCanvas.classList.contains('active') && glasslessMode !== 'wiggle') {
+      // Keep open but non-fullscreen is fine
+    }
+  }
+});
+
+// ── TOAST ──
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
