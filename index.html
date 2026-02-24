@@ -17,11 +17,10 @@
     --accent: #6ee7b7;
     --accent2: #38bdf8;
     --danger: #f87171;
+    --warn: #fbbf24;
     --radius: 12px;
   }
-
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
   body {
     font-family: 'DM Sans', sans-serif;
     background: var(--bg);
@@ -30,306 +29,198 @@
     overflow-x: hidden;
   }
 
-  /* ── FULLSCREEN SBS MODE ── */
+  /* ── FULLSCREEN SBS ── */
   #sbs-fullscreen {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: #000;
-    cursor: none;
+    display: none; position: fixed; inset: 0; z-index: 9999; background: #000; cursor: none;
   }
-  #sbs-fullscreen img {
-    width: 100%;
-    height: 100%;
-    object-fit: fill;
-    display: block;
-  }
+  #sbs-fullscreen img { width: 100%; height: 100%; object-fit: fill; display: block; }
   #sbs-fullscreen.active { display: block; }
 
   /* ── GLASSES-FREE CANVAS ── */
   #viewer-canvas {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 9998;
-    background: #000;
+    display: none; position: fixed; inset: 0; z-index: 9998; background: #000;
   }
   #viewer-canvas.active { display: flex; align-items: center; justify-content: center; }
   #viewer-canvas canvas { max-width: 100%; max-height: 100%; }
   #viewer-controls {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 9999;
-    display: flex;
-    gap: 8px;
-    background: rgba(10,10,12,0.85);
-    backdrop-filter: blur(12px);
-    padding: 8px 14px;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    opacity: 0;
-    transition: opacity 0.3s;
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 9999; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+    background: rgba(10,10,12,0.88); backdrop-filter: blur(12px);
+    padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border);
+    opacity: 0; transition: opacity 0.3s;
   }
-  #viewer-canvas:hover #viewer-controls,
-  #viewer-controls:hover { opacity: 1; }
+  #viewer-canvas:hover #viewer-controls, #viewer-controls:hover { opacity: 1; }
   #viewer-controls button {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 6px 14px;
-    border-radius: 999px;
-    font: 500 13px 'DM Sans', sans-serif;
-    cursor: pointer;
-    transition: all 0.2s;
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
+    padding: 6px 14px; border-radius: 999px; font: 500 13px 'DM Sans', sans-serif;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
   }
   #viewer-controls button:hover { color: var(--text); border-color: var(--accent); }
   #viewer-controls button.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .speed-control { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); }
+  .speed-control input[type="range"] { width: 70px; accent-color: var(--accent); }
 
-  /* ── LANDING / UI ── */
-  .app-container {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 60px 24px 100px;
+  /* ── PARALLAX VIEWER ── */
+  #parallax-viewer {
+    display: none; position: fixed; inset: 0; z-index: 9998; background: #000; cursor: crosshair;
   }
+  #parallax-viewer.active { display: block; }
+  #parallax-viewer canvas { width: 100%; height: 100%; display: block; }
+  #parallax-hint {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 9999; background: rgba(10,10,12,0.88); backdrop-filter: blur(12px);
+    padding: 8px 18px; border-radius: 999px; border: 1px solid var(--border);
+    font: 500 13px 'DM Sans', sans-serif; color: var(--text-dim);
+    display: flex; gap: 12px; align-items: center;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  #parallax-viewer:hover #parallax-hint { opacity: 1; }
+  #parallax-hint button {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
+    padding: 5px 12px; border-radius: 999px; font: 500 12px 'DM Sans', sans-serif;
+    cursor: pointer; transition: all 0.2s;
+  }
+  #parallax-hint button:hover { color: var(--danger); border-color: var(--danger); }
+  .depth-slider { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); }
+  .depth-slider input[type="range"] { width: 80px; accent-color: var(--accent); }
 
-  header {
-    text-align: center;
-    margin-bottom: 48px;
-  }
-  header .badge {
-    display: inline-block;
-    font: 700 11px 'Space Mono', monospace;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--accent);
-    background: rgba(110,231,183,0.08);
-    border: 1px solid rgba(110,231,183,0.2);
-    padding: 5px 14px;
-    border-radius: 999px;
-    margin-bottom: 20px;
-  }
+  /* ── LANDING UI ── */
+  .app-container { max-width: 720px; margin: 0 auto; padding: 60px 24px 100px; }
+  header { text-align: center; margin-bottom: 48px; }
   header h1 {
-    font-size: clamp(28px, 6vw, 42px);
-    font-weight: 700;
-    line-height: 1.15;
-    letter-spacing: -0.02em;
-    margin-bottom: 12px;
+    font-size: clamp(28px, 6vw, 42px); font-weight: 700;
+    line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 12px;
   }
   header h1 span { color: var(--accent); }
-  header p {
-    font-size: 15px;
-    color: var(--text-dim);
-    line-height: 1.6;
-    max-width: 480px;
-    margin: 0 auto;
+  header p { font-size: 15px; color: var(--text-dim); line-height: 1.6; max-width: 500px; margin: 0 auto; }
+
+  /* ── MODE TABS ── */
+  .mode-tabs {
+    display: flex; gap: 0; margin-bottom: 24px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
   }
+  .mode-tab {
+    flex: 1; padding: 14px 12px; text-align: center; cursor: pointer;
+    font: 600 14px 'DM Sans', sans-serif; color: var(--text-dim);
+    border: none; background: transparent; transition: all 0.2s;
+    border-right: 1px solid var(--border);
+  }
+  .mode-tab:last-child { border-right: none; }
+  .mode-tab:hover { color: var(--text); background: var(--surface2); }
+  .mode-tab.active { color: var(--accent); background: var(--surface2); }
+  .mode-tab .tab-label { display: block; font-size: 14px; }
+  .mode-tab .tab-sub { display: block; font-size: 11px; font-weight: 400; color: var(--text-dim); margin-top: 2px; }
 
   /* ── DROP ZONE ── */
   .drop-zone {
-    border: 2px dashed var(--border);
-    border-radius: var(--radius);
-    padding: 48px 24px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.25s;
-    background: var(--surface);
-    margin-bottom: 24px;
-    position: relative;
-    overflow: hidden;
+    border: 2px dashed var(--border); border-radius: var(--radius); padding: 48px 24px;
+    text-align: center; cursor: pointer; transition: all 0.25s;
+    background: var(--surface); margin-bottom: 24px; position: relative; overflow: hidden;
   }
-  .drop-zone:hover, .drop-zone.dragover {
-    border-color: var(--accent);
-    background: rgba(110,231,183,0.04);
-  }
-  .drop-zone .icon {
-    font-size: 36px;
-    margin-bottom: 12px;
-    opacity: 0.6;
-  }
+  .drop-zone:hover, .drop-zone.dragover { border-color: var(--accent); background: rgba(110,231,183,0.04); }
+  .drop-zone .icon { font-size: 36px; margin-bottom: 12px; opacity: 0.6; }
   .drop-zone h3 { font-size: 16px; font-weight: 500; margin-bottom: 6px; }
   .drop-zone p { font-size: 13px; color: var(--text-dim); }
   .drop-zone input { display: none; }
 
   /* ── PREVIEW ── */
   .preview {
-    display: none;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    margin-bottom: 24px;
+    display: none; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; margin-bottom: 24px;
   }
   .preview.active { display: block; }
-  .preview-img-wrap {
-    position: relative;
-    background: #000;
-    line-height: 0;
-  }
-  .preview-img-wrap img {
-    width: 100%;
-    height: auto;
-    max-height: 300px;
-    object-fit: contain;
-  }
+  .preview-img-wrap { position: relative; background: #000; line-height: 0; }
+  .preview-img-wrap img { width: 100%; height: auto; max-height: 300px; object-fit: contain; }
   .preview-img-wrap .divider {
-    position: absolute;
-    top: 0; bottom: 0;
-    left: 50%;
-    width: 2px;
-    background: var(--accent);
-    opacity: 0.5;
-    pointer-events: none;
+    position: absolute; top: 0; bottom: 0; left: 50%; width: 2px;
+    background: var(--accent); opacity: 0.5; pointer-events: none;
   }
   .preview-img-wrap .label-l, .preview-img-wrap .label-r {
-    position: absolute;
-    top: 8px;
-    font: 700 10px 'Space Mono', monospace;
-    letter-spacing: 0.08em;
-    padding: 3px 8px;
-    border-radius: 4px;
-    background: rgba(0,0,0,0.7);
-    color: var(--text-dim);
+    position: absolute; top: 8px; font: 700 10px 'Space Mono', monospace;
+    letter-spacing: 0.08em; padding: 3px 8px; border-radius: 4px;
+    background: rgba(0,0,0,0.7); color: var(--text-dim);
   }
   .preview-img-wrap .label-l { left: 8px; }
   .preview-img-wrap .label-r { right: 8px; }
   .preview-info {
-    padding: 14px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 13px;
-    color: var(--text-dim);
+    padding: 14px 16px; display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; color: var(--text-dim);
   }
   .preview-info .name { color: var(--text); font-weight: 500; }
 
   /* ── BUTTONS ── */
-  .actions {
-    display: grid;
-    gap: 12px;
-  }
-  .btn-group {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
+  .actions { display: grid; gap: 12px; }
+  .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .btn-group-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
   .btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 16px 20px;
-    border-radius: var(--radius);
-    font: 600 14px 'DM Sans', sans-serif;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: center;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 16px 20px; border-radius: var(--radius); font: 600 14px 'DM Sans', sans-serif;
+    border: none; cursor: pointer; transition: all 0.2s; text-align: center;
   }
-  .btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-  .btn-primary {
-    background: var(--accent);
-    color: var(--bg);
-  }
+  .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: var(--bg); }
   .btn-primary:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
-  .btn-secondary {
-    background: var(--surface2);
-    color: var(--text);
-    border: 1px solid var(--border);
-  }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
   .btn-secondary:hover:not(:disabled) { border-color: var(--accent2); color: var(--accent2); }
-
   .btn .emoji { font-size: 18px; }
 
+  /* ── MODEL DOWNLOAD NOTICE ── */
+  .model-notice {
+    background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.2);
+    border-radius: var(--radius); padding: 14px 18px; margin-bottom: 24px;
+    font-size: 13px; line-height: 1.6; color: var(--text-dim); display: none;
+  }
+  .model-notice.visible { display: block; }
+  .model-notice strong { color: var(--warn); }
+  .model-status {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font: 700 11px 'Space Mono', monospace; letter-spacing: 0.05em; margin-left: 6px;
+  }
+  .model-status.cached { background: rgba(110,231,183,0.15); color: var(--accent); }
+  .model-status.not-cached { background: rgba(251,191,36,0.15); color: var(--warn); }
+
+  /* ── PROGRESS ── */
+  .progress-bar {
+    display: none; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 20px; margin-bottom: 24px;
+  }
+  .progress-bar.active { display: block; }
+  .progress-bar .label { font-size: 13px; color: var(--text-dim); margin-bottom: 8px; }
+  .progress-track { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s; width: 0%; }
+
   /* ── INFO CARDS ── */
-  .info-section {
-    margin-top: 56px;
-  }
-  .info-section h2 {
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
+  .info-section { margin-top: 56px; }
+  .info-section h2 { font-size: 18px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
   .info-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 18px 20px;
-    margin-bottom: 12px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px; margin-bottom: 12px;
   }
-  .info-card h4 {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 6px;
-    color: var(--accent2);
-  }
-  .info-card p, .info-card ol {
-    font-size: 13px;
-    line-height: 1.65;
-    color: var(--text-dim);
-  }
+  .info-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 6px; color: var(--accent2); }
+  .info-card p, .info-card ol { font-size: 13px; line-height: 1.65; color: var(--text-dim); }
   .info-card ol { padding-left: 18px; }
   .info-card ol li { margin-bottom: 4px; }
-  .info-card code {
-    font-family: 'Space Mono', monospace;
-    font-size: 12px;
-    background: var(--surface2);
-    padding: 2px 6px;
-    border-radius: 4px;
-    color: var(--accent);
-  }
-
-  /* ── SPEED DIAL ── */
-  .speed-control {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: var(--text-dim);
-  }
-  .speed-control input[type="range"] {
-    width: 80px;
-    accent-color: var(--accent);
-  }
 
   /* ── TOAST ── */
   .toast {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%) translateY(-100px);
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 10px 20px;
-    border-radius: 999px;
-    font-size: 13px;
-    z-index: 99999;
-    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-    pointer-events: none;
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px);
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 20px; border-radius: 999px; font-size: 13px;
+    z-index: 99999; transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none; max-width: 90vw; text-align: center;
   }
   .toast.show { transform: translateX(-50%) translateY(0); }
 
-  @media (max-width: 500px) {
-    .btn-group { grid-template-columns: 1fr; }
+  @media (max-width: 600px) {
+    .btn-group, .btn-group-3 { grid-template-columns: 1fr; }
     .app-container { padding: 36px 16px 80px; }
   }
 </style>
 </head>
 <body>
 
-<!-- FULLSCREEN SBS (for glasses) -->
-<div id="sbs-fullscreen">
-  <img id="sbs-fs-img" src="" alt="SBS 3D">
-</div>
+<!-- FULLSCREEN SBS -->
+<div id="sbs-fullscreen"><img id="sbs-fs-img" src="" alt="SBS 3D"></div>
 
 <!-- GLASSES-FREE VIEWER -->
 <div id="viewer-canvas">
@@ -338,37 +229,67 @@
     <button data-mode="wiggle" class="active">Wiggle</button>
     <button data-mode="anaglyph">Anaglyph</button>
     <button data-mode="crosseye">Cross-eye</button>
-    <div class="speed-control">
-      <span>Speed</span>
-      <input type="range" id="wiggle-speed" min="50" max="500" value="150">
-    </div>
+    <div class="speed-control"><span>Speed</span><input type="range" id="wiggle-speed" min="50" max="500" value="150"></div>
     <button data-mode="close" style="color:var(--danger)">✕ Close</button>
+  </div>
+</div>
+
+<!-- PARALLAX VIEWER -->
+<div id="parallax-viewer">
+  <canvas id="parallax-canvas"></canvas>
+  <div id="parallax-hint">
+    <span>Move mouse for parallax</span>
+    <div class="depth-slider"><span>Depth</span><input type="range" id="depth-intensity" min="1" max="40" value="12"></div>
+    <button id="parallax-close">✕ Close</button>
   </div>
 </div>
 
 <!-- LANDING UI -->
 <div class="app-container">
   <header>
-    <div class="badge">Companion to 3D Window Viewer</div>
     <h1>SBS <span>3D</span> Viewer</h1>
-    <p>Load a side-by-side image. View it in 3D on XREAL glasses (one tap) or without glasses (wiggle / anaglyph).</p>
+    <p>Load a side-by-side 3D image for XREAL glasses, or a regular photo to convert to 3D. View with glasses or without.</p>
   </header>
+
+  <!-- Mode Tabs -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" data-tab="sbs">
+      <span class="tab-label">SBS Image</span>
+      <span class="tab-sub">Already side-by-side</span>
+    </button>
+    <button class="mode-tab" data-tab="regular">
+      <span class="tab-label">Regular Photo</span>
+      <span class="tab-sub">AI depth → 3D</span>
+    </button>
+  </div>
+
+  <!-- Model notice -->
+  <div class="model-notice" id="model-notice">
+    <strong>⚡ AI Depth Model</strong> — First use downloads a ~100MB depth estimation model from HuggingFace. It's cached in your browser after that — subsequent uses load instantly.
+    <span class="model-status not-cached" id="model-status">Checking...</span>
+  </div>
 
   <!-- Drop Zone -->
   <div class="drop-zone" id="drop-zone">
-    <div class="icon">📷</div>
-    <h3>Drop an SBS image here</h3>
-    <p>or tap to browse &middot; PNG, JPG, WEBP</p>
+    <div class="icon" id="drop-icon">📷</div>
+    <h3 id="drop-title">Drop an SBS image here</h3>
+    <p id="drop-sub">or tap to browse · PNG, JPG, WEBP</p>
     <input type="file" id="file-input" accept="image/*">
+  </div>
+
+  <!-- Progress bar -->
+  <div class="progress-bar" id="progress-bar">
+    <div class="label" id="progress-label">Loading model...</div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
   </div>
 
   <!-- Preview -->
   <div class="preview" id="preview">
     <div class="preview-img-wrap">
       <img id="preview-img" src="" alt="Preview">
-      <div class="divider"></div>
-      <div class="label-l">LEFT</div>
-      <div class="label-r">RIGHT</div>
+      <div class="divider" id="preview-divider"></div>
+      <div class="label-l" id="label-l">LEFT</div>
+      <div class="label-r" id="label-r">RIGHT</div>
     </div>
     <div class="preview-info">
       <span class="name" id="file-name">—</span>
@@ -376,55 +297,60 @@
     </div>
   </div>
 
-  <!-- Actions -->
-  <div class="actions">
+  <!-- Actions: SBS mode -->
+  <div class="actions" id="actions-sbs">
     <button class="btn btn-primary" id="btn-glasses" disabled>
       <span class="emoji">🥽</span> View on XREAL Glasses (Fullscreen SBS)
     </button>
     <div class="btn-group">
-      <button class="btn btn-secondary" id="btn-wiggle" disabled>
-        <span class="emoji">👀</span> Wiggle 3D
-      </button>
-      <button class="btn btn-secondary" id="btn-anaglyph" disabled>
-        <span class="emoji">🔴🔵</span> Anaglyph
-      </button>
+      <button class="btn btn-secondary" id="btn-wiggle" disabled><span class="emoji">👀</span> Wiggle 3D</button>
+      <button class="btn btn-secondary" id="btn-anaglyph" disabled><span class="emoji">🔴</span> Anaglyph</button>
     </div>
+  </div>
+
+  <!-- Actions: Regular mode -->
+  <div class="actions" id="actions-regular" style="display:none;">
+    <button class="btn btn-primary" id="btn-generate" disabled>
+      <span class="emoji">🧠</span> Generate Depth & Convert to 3D
+    </button>
+    <div class="btn-group-3" id="actions-regular-view" style="display:none;">
+      <button class="btn btn-secondary" id="btn-r-parallax" disabled><span class="emoji">🖱️</span> Parallax</button>
+      <button class="btn btn-secondary" id="btn-r-wiggle" disabled><span class="emoji">👀</span> Wiggle</button>
+      <button class="btn btn-secondary" id="btn-r-anaglyph" disabled><span class="emoji">🔴</span> Anaglyph</button>
+    </div>
+    <button class="btn btn-secondary" id="btn-r-glasses" disabled style="display:none;">
+      <span class="emoji">🥽</span> View on XREAL Glasses (Fullscreen SBS)
+    </button>
   </div>
 
   <!-- Instructions -->
   <div class="info-section">
     <h2>📖 How to use</h2>
-
     <div class="info-card">
-      <h4>XREAL Glasses (via phone)</h4>
+      <h4>SBS Images → XREAL Glasses</h4>
       <ol>
-        <li>Open this page on your <strong>Samsung S24 Ultra</strong> in Chrome</li>
+        <li>Open this page in Chrome on your phone</li>
         <li>Plug in XREAL glasses via USB-C</li>
         <li>Put glasses in SBS mode (long-press brightness+ ~3 sec)</li>
-        <li>Load your SBS image above</li>
-        <li>Tap <strong>"View on XREAL Glasses"</strong> — it goes fullscreen and fills the display</li>
+        <li>Load your SBS image, tap <strong>"View on XREAL Glasses"</strong></li>
         <li>Tap the screen to exit</li>
       </ol>
     </div>
-
     <div class="info-card">
-      <h4>Without glasses (on any screen)</h4>
+      <h4>Regular Photos → 3D</h4>
       <ol>
-        <li>Load your SBS image</li>
-        <li><strong>Wiggle 3D</strong> — rapidly alternates left/right eye to create depth perception</li>
-        <li><strong>Anaglyph</strong> — red/cyan mode, use classic 3D glasses if you have them</li>
-        <li>Speed slider controls the wiggle rate</li>
+        <li>Switch to the <strong>Regular Photo</strong> tab</li>
+        <li>Load any photo, tap <strong>"Generate Depth"</strong></li>
+        <li>First time downloads a ~100MB AI model (cached after that)</li>
+        <li>Choose <strong>Parallax</strong> (mouse-tracked), <strong>Wiggle</strong>, or <strong>Anaglyph</strong></li>
       </ol>
     </div>
-
     <div class="info-card">
-      <h4>Sending images to Quest 3</h4>
-      <p>Unfortunately there's no "Phone Link" equivalent for Quest 3. Your best options:</p>
+      <h4>Without glasses (any screen)</h4>
       <ol>
-        <li><strong>USB cable</strong> — plug Quest 3 into PC, allow file access in headset, copy images to <code>Oculus/Screenshots</code></li>
-        <li><strong>Cloud storage</strong> — upload to Google Drive, open the Quest browser, download from there</li>
-        <li><strong>This webpage</strong> — open this same URL in the Quest 3 browser, load your image, and view it in wiggle/anaglyph mode right in VR</li>
-        <li>For dedicated SBS viewing on Quest: <strong>immerGallery</strong> (Meta Store) auto-detects SBS format</li>
+        <li><strong>Wiggle 3D</strong> — alternates left/right to show depth</li>
+        <li><strong>Anaglyph</strong> — red/cyan for classic 3D glasses</li>
+        <li><strong>Parallax</strong> — move your mouse to look around the scene</li>
       </ol>
     </div>
   </div>
@@ -433,64 +359,126 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script>
+<script type="module">
 // ── STATE ──
-let sbsImage = null;        // original full SBS image (HTMLImageElement)
-let leftCanvas, rightCanvas; // split L/R as offscreen canvases
+let currentMode = 'sbs';
+let sbsImage = null;
+let regularImage = null;
+let depthMap = null;
+let depthWidth = 0, depthHeight = 0;
+let leftCanvas, rightCanvas;
 let glasslessMode = 'wiggle';
 let wiggleTimer = null;
 let wiggleFrame = 0;
+let pipeline = null;
+let modelLoaded = false;
+let generatedSbsCanvas = null;
 
 // ── ELEMENTS ──
-const dropZone     = document.getElementById('drop-zone');
-const fileInput    = document.getElementById('file-input');
-const preview      = document.getElementById('preview');
-const previewImg   = document.getElementById('preview-img');
-const fileName     = document.getElementById('file-name');
-const fileDims     = document.getElementById('file-dims');
-const btnGlasses   = document.getElementById('btn-glasses');
-const btnWiggle    = document.getElementById('btn-wiggle');
-const btnAnaglyph  = document.getElementById('btn-anaglyph');
-const sbsFullscreen = document.getElementById('sbs-fullscreen');
-const sbsFsImg     = document.getElementById('sbs-fs-img');
-const viewerCanvas = document.getElementById('viewer-canvas');
-const glasslessCvs = document.getElementById('glassless-canvas');
-const ctx          = glasslessCvs.getContext('2d');
-const wiggleSpeed  = document.getElementById('wiggle-speed');
-const toast        = document.getElementById('toast');
+const $ = id => document.getElementById(id);
+const dropZone = $('drop-zone'), fileInput = $('file-input');
+const preview = $('preview'), previewImg = $('preview-img');
+const previewDiv = $('preview-divider'), labelL = $('label-l'), labelR = $('label-r');
+const fileName = $('file-name'), fileDims = $('file-dims');
+const btnGlasses = $('btn-glasses'), btnWiggle = $('btn-wiggle'), btnAnaglyph = $('btn-anaglyph');
+const btnGenerate = $('btn-generate');
+const btnRParallax = $('btn-r-parallax'), btnRWiggle = $('btn-r-wiggle'), btnRAnaglyph = $('btn-r-anaglyph');
+const btnRGlasses = $('btn-r-glasses');
+const actionsRegView = $('actions-regular-view');
+const sbsFullscreen = $('sbs-fullscreen'), sbsFsImg = $('sbs-fs-img');
+const viewerCanvas = $('viewer-canvas'), glasslessCvs = $('glassless-canvas');
+const ctx = glasslessCvs.getContext('2d');
+const wiggleSpeed = $('wiggle-speed');
+const parallaxViewer = $('parallax-viewer'), parallaxCanvas = $('parallax-canvas');
+const pCtx = parallaxCanvas.getContext('2d');
+const depthSlider = $('depth-intensity');
+const modelNotice = $('model-notice'), modelStatus = $('model-status');
+const progressBar = $('progress-bar'), progressLabel = $('progress-label'), progressFill = $('progress-fill');
+const toastEl = $('toast');
+
+// ── MODE TABS ──
+document.querySelectorAll('.mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentMode = tab.dataset.tab;
+    updateUI();
+  });
+});
+
+function updateUI() {
+  const isSbs = currentMode === 'sbs';
+  $('actions-sbs').style.display = isSbs ? 'grid' : 'none';
+  $('actions-regular').style.display = isSbs ? 'none' : 'grid';
+  modelNotice.classList.toggle('visible', !isSbs);
+  if (isSbs) {
+    $('drop-icon').textContent = '📷';
+    $('drop-title').textContent = 'Drop an SBS image here';
+    $('drop-sub').textContent = 'or tap to browse · PNG, JPG, WEBP';
+    previewDiv.style.display = ''; labelL.style.display = ''; labelR.style.display = '';
+  } else {
+    $('drop-icon').textContent = '🖼️';
+    $('drop-title').textContent = 'Drop a regular photo here';
+    $('drop-sub').textContent = 'AI will estimate depth · PNG, JPG, WEBP';
+    previewDiv.style.display = 'none'; labelL.style.display = 'none'; labelR.style.display = 'none';
+    checkModelCache();
+  }
+  preview.classList.remove('active');
+  disableAll();
+}
+
+function disableAll() {
+  [btnGlasses, btnWiggle, btnAnaglyph, btnGenerate, btnRParallax, btnRWiggle, btnRAnaglyph, btnRGlasses]
+    .forEach(b => b.disabled = true);
+  actionsRegView.style.display = 'none';
+  btnRGlasses.style.display = 'none';
+}
+
+// ── MODEL CACHE CHECK ──
+async function checkModelCache() {
+  try {
+    const cache = await caches.open('transformers-cache');
+    const keys = await cache.keys();
+    const has = keys.some(k => k.url.includes('depth-anything'));
+    modelStatus.textContent = has ? 'CACHED ✓' : '~100MB DOWNLOAD';
+    modelStatus.className = 'model-status ' + (has ? 'cached' : 'not-cached');
+  } catch {
+    modelStatus.textContent = modelLoaded ? 'LOADED ✓' : '~100MB DOWNLOAD';
+    modelStatus.className = 'model-status ' + (modelLoaded ? 'cached' : 'not-cached');
+  }
+}
 
 // ── FILE HANDLING ──
 dropZone.addEventListener('click', () => fileInput.click());
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
 dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('dragover');
+  e.preventDefault(); dropZone.classList.remove('dragover');
   if (e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0]);
 });
 fileInput.addEventListener('change', () => { if (fileInput.files.length) loadFile(fileInput.files[0]); });
 
 function loadFile(file) {
   if (!file.type.startsWith('image/')) { showToast('Please select an image file'); return; }
-
   const reader = new FileReader();
   reader.onload = e => {
     const img = new Image();
     img.onload = () => {
-      sbsImage = img;
       previewImg.src = img.src;
       fileName.textContent = file.name;
       fileDims.textContent = `${img.naturalWidth} × ${img.naturalHeight}`;
       preview.classList.add('active');
-
-      // Split L/R
-      splitSBS(img);
-
-      // Enable buttons
-      btnGlasses.disabled = false;
-      btnWiggle.disabled = false;
-      btnAnaglyph.disabled = false;
-
+      if (currentMode === 'sbs') {
+        sbsImage = img;
+        splitSBS(img);
+        btnGlasses.disabled = false; btnWiggle.disabled = false; btnAnaglyph.disabled = false;
+      } else {
+        regularImage = img;
+        depthMap = null; generatedSbsCanvas = null;
+        btnGenerate.disabled = false;
+        btnGenerate.innerHTML = '<span class="emoji">🧠</span> Generate Depth & Convert to 3D';
+        actionsRegView.style.display = 'none'; btnRGlasses.style.display = 'none';
+      }
       showToast(`Loaded: ${img.naturalWidth}×${img.naturalHeight}`);
     };
     img.src = e.target.result;
@@ -499,39 +487,222 @@ function loadFile(file) {
 }
 
 function splitSBS(img) {
-  const w = img.naturalWidth;
-  const h = img.naturalHeight;
-  const halfW = Math.floor(w / 2);
-
-  leftCanvas = document.createElement('canvas');
-  leftCanvas.width = halfW;
-  leftCanvas.height = h;
-  leftCanvas.getContext('2d').drawImage(img, 0, 0, halfW, h, 0, 0, halfW, h);
-
-  rightCanvas = document.createElement('canvas');
-  rightCanvas.width = halfW;
-  rightCanvas.height = h;
-  rightCanvas.getContext('2d').drawImage(img, halfW, 0, halfW, h, 0, 0, halfW, h);
+  const w = img.naturalWidth, h = img.naturalHeight, half = Math.floor(w / 2);
+  leftCanvas = Object.assign(document.createElement('canvas'), { width: half, height: h });
+  leftCanvas.getContext('2d').drawImage(img, 0, 0, half, h, 0, 0, half, h);
+  rightCanvas = Object.assign(document.createElement('canvas'), { width: half, height: h });
+  rightCanvas.getContext('2d').drawImage(img, half, 0, half, h, 0, 0, half, h);
 }
 
-// ── XREAL GLASSES: FULLSCREEN SBS ──
+// ── DEPTH ESTIMATION ──
+btnGenerate.addEventListener('click', async () => {
+  if (!regularImage) return;
+  btnGenerate.disabled = true;
+  btnGenerate.textContent = 'Loading model...';
+  try {
+    await loadDepthModel();
+    await estimateDepth(regularImage);
+    generateSBSFromDepth(regularImage);
+    actionsRegView.style.display = 'grid'; btnRGlasses.style.display = 'flex';
+    btnRParallax.disabled = false; btnRWiggle.disabled = false;
+    btnRAnaglyph.disabled = false; btnRGlasses.disabled = false;
+    btnGenerate.innerHTML = '<span class="emoji">✅</span> Depth Generated — Choose a View';
+    showToast('Depth map ready!');
+  } catch (err) {
+    console.error(err);
+    showToast('Error: ' + err.message);
+    btnGenerate.disabled = false;
+    btnGenerate.innerHTML = '<span class="emoji">🧠</span> Generate Depth & Convert to 3D';
+  }
+});
+
+async function loadDepthModel() {
+  if (pipeline) return;
+  progressBar.classList.add('active');
+  progressLabel.textContent = 'Downloading depth model (~100MB, cached after first use)...';
+  progressFill.style.width = '5%';
+
+  const { pipeline: createPipeline } = await import(
+    'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.2'
+  );
+
+  pipeline = await createPipeline(
+    'depth-estimation',
+    'onnx-community/depth-anything-v2-small',
+    {
+      device: (typeof navigator !== 'undefined' && navigator.gpu) ? 'webgpu' : 'wasm',
+      progress_callback: (p) => {
+        if (p.status === 'download' && p.total) {
+          const pct = Math.round((p.loaded / p.total) * 100);
+          progressFill.style.width = pct + '%';
+          progressLabel.textContent = `Downloading model... ${pct}%`;
+        } else if (p.status === 'ready') {
+          progressFill.style.width = '100%';
+          progressLabel.textContent = 'Model loaded!';
+        }
+      }
+    }
+  );
+  modelLoaded = true;
+  modelStatus.textContent = 'LOADED ✓';
+  modelStatus.className = 'model-status cached';
+  setTimeout(() => progressBar.classList.remove('active'), 1000);
+}
+
+async function estimateDepth(img) {
+  progressBar.classList.add('active');
+  progressLabel.textContent = 'Estimating depth...';
+  progressFill.style.width = '50%';
+
+  const maxDim = 512;
+  let w = img.naturalWidth, h = img.naturalHeight;
+  if (Math.max(w, h) > maxDim) {
+    const s = maxDim / Math.max(w, h); w = Math.round(w * s); h = Math.round(h * s);
+  }
+  const c = Object.assign(document.createElement('canvas'), { width: w, height: h });
+  c.getContext('2d').drawImage(img, 0, 0, w, h);
+
+  const result = await pipeline(c.toDataURL('image/jpeg', 0.9));
+  const raw = result.depth;
+  depthWidth = raw.width; depthHeight = raw.height;
+
+  const data = raw.data;
+  let min = Infinity, max = -Infinity;
+  for (let i = 0; i < data.length; i++) { if (data[i] < min) min = data[i]; if (data[i] > max) max = data[i]; }
+  const range = max - min || 1;
+  depthMap = new Float32Array(data.length);
+  for (let i = 0; i < data.length; i++) depthMap[i] = (data[i] - min) / range;
+
+  progressFill.style.width = '100%';
+  progressLabel.textContent = 'Depth estimation complete!';
+  setTimeout(() => progressBar.classList.remove('active'), 800);
+}
+
+function resampleDepth(tw, th) {
+  const r = new Float32Array(tw * th);
+  const sx = depthWidth / tw, sy = depthHeight / th;
+  for (let y = 0; y < th; y++)
+    for (let x = 0; x < tw; x++)
+      r[y * tw + x] = depthMap[Math.min(Math.floor(y * sy), depthHeight - 1) * depthWidth + Math.min(Math.floor(x * sx), depthWidth - 1)];
+  return r;
+}
+
+function generateSBSFromDepth(img) {
+  const w = img.naturalWidth, h = img.naturalHeight, maxShift = 20;
+  const src = Object.assign(document.createElement('canvas'), { width: w, height: h });
+  src.getContext('2d').drawImage(img, 0, 0);
+  const srcData = src.getContext('2d').getImageData(0, 0, w, h).data;
+  const depth = resampleDepth(w, h);
+
+  leftCanvas = Object.assign(document.createElement('canvas'), { width: w, height: h });
+  rightCanvas = Object.assign(document.createElement('canvas'), { width: w, height: h });
+  const lImg = leftCanvas.getContext('2d').createImageData(w, h);
+  const rImg = rightCanvas.getContext('2d').createImageData(w, h);
+  const ld = lImg.data, rd = rImg.data;
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = y * w + x, pi = idx * 4;
+      const shift = (depth[idx] - 0.5) * maxShift;
+      const lx = Math.round(x + shift * 0.5), rx = Math.round(x - shift * 0.5);
+      if (lx >= 0 && lx < w) { const li = (y * w + lx) * 4; ld[li] = srcData[pi]; ld[li+1] = srcData[pi+1]; ld[li+2] = srcData[pi+2]; ld[li+3] = 255; }
+      if (rx >= 0 && rx < w) { const ri = (y * w + rx) * 4; rd[ri] = srcData[pi]; rd[ri+1] = srcData[pi+1]; rd[ri+2] = srcData[pi+2]; rd[ri+3] = 255; }
+    }
+  }
+  fillHoles(ld, w, h); fillHoles(rd, w, h);
+  leftCanvas.getContext('2d').putImageData(lImg, 0, 0);
+  rightCanvas.getContext('2d').putImageData(rImg, 0, 0);
+
+  generatedSbsCanvas = Object.assign(document.createElement('canvas'), { width: w * 2, height: h });
+  const sc = generatedSbsCanvas.getContext('2d');
+  sc.drawImage(leftCanvas, 0, 0);
+  sc.drawImage(rightCanvas, w, 0);
+}
+
+function fillHoles(data, w, h) {
+  for (let y = 0; y < h; y++) {
+    let lr = 0, lg = 0, lb = 0, has = false;
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      if (!data[i+3]) { if (has) { data[i] = lr; data[i+1] = lg; data[i+2] = lb; data[i+3] = 255; } }
+      else { lr = data[i]; lg = data[i+1]; lb = data[i+2]; has = true; }
+    }
+    has = false;
+    for (let x = w - 1; x >= 0; x--) {
+      const i = (y * w + x) * 4;
+      if (!data[i+3]) { if (has) { data[i] = lr; data[i+1] = lg; data[i+2] = lb; data[i+3] = 255; } }
+      else { lr = data[i]; lg = data[i+1]; lb = data[i+2]; has = true; }
+    }
+  }
+}
+
+// ── REGULAR MODE BUTTONS ──
+btnRParallax.addEventListener('click', openParallax);
+btnRWiggle.addEventListener('click', () => openGlassless('wiggle'));
+btnRAnaglyph.addEventListener('click', () => openGlassless('anaglyph'));
+btnRGlasses.addEventListener('click', () => {
+  if (!generatedSbsCanvas) return;
+  sbsFsImg.src = generatedSbsCanvas.toDataURL('image/jpeg', 0.95);
+  sbsFullscreen.classList.add('active');
+  goFullscreen(sbsFullscreen);
+  showToast('Tap anywhere to exit');
+});
+
+// ── PARALLAX VIEWER ──
+let parallaxRAF = null, mouseX = 0.5, mouseY = 0.5;
+
+function openParallax() {
+  if (!regularImage || !depthMap) return;
+  parallaxViewer.classList.add('active');
+  const w = regularImage.naturalWidth, h = regularImage.naturalHeight;
+  parallaxCanvas.width = w; parallaxCanvas.height = h;
+
+  const srcC = Object.assign(document.createElement('canvas'), { width: w, height: h });
+  srcC.getContext('2d').drawImage(regularImage, 0, 0);
+  const srcData = srcC.getContext('2d').getImageData(0, 0, w, h);
+  const depthR = resampleDepth(w, h);
+
+  goFullscreen(parallaxViewer);
+  parallaxViewer.onmousemove = e => { mouseX = e.clientX / window.innerWidth; mouseY = e.clientY / window.innerHeight; };
+  parallaxViewer.ontouchmove = e => { e.preventDefault(); mouseX = e.touches[0].clientX / window.innerWidth; mouseY = e.touches[0].clientY / window.innerHeight; };
+
+  function render() {
+    const intensity = parseFloat(depthSlider.value);
+    const out = pCtx.createImageData(w, h);
+    const s = srcData.data, o = out.data;
+    const offX = (mouseX - 0.5) * intensity, offY = (mouseY - 0.5) * intensity;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const idx = y * w + x, d = depthR[idx];
+        const sx = Math.max(0, Math.min(w-1, Math.round(x + offX * (d - 0.5) * 2)));
+        const sy = Math.max(0, Math.min(h-1, Math.round(y + offY * (d - 0.5) * 2)));
+        const oi = idx * 4, si = (sy * w + sx) * 4;
+        o[oi] = s[si]; o[oi+1] = s[si+1]; o[oi+2] = s[si+2]; o[oi+3] = 255;
+      }
+    }
+    pCtx.putImageData(out, 0, 0);
+    parallaxRAF = requestAnimationFrame(render);
+  }
+  parallaxRAF = requestAnimationFrame(render);
+}
+
+function closeParallax() {
+  if (parallaxRAF) cancelAnimationFrame(parallaxRAF);
+  parallaxViewer.classList.remove('active');
+  parallaxViewer.onmousemove = null; parallaxViewer.ontouchmove = null;
+  exitFullscreen();
+}
+$('parallax-close').addEventListener('click', closeParallax);
+
+// ── SBS FULLSCREEN ──
 btnGlasses.addEventListener('click', () => {
   if (!sbsImage) return;
   sbsFsImg.src = sbsImage.src;
   sbsFullscreen.classList.add('active');
-
-  // Try real fullscreen API (critical for filling 3840×1080 on glasses)
-  const el = sbsFullscreen;
-  const rfs = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-  if (rfs) rfs.call(el).catch(() => {});
-
+  goFullscreen(sbsFullscreen);
   showToast('Tap anywhere to exit');
 });
-
-sbsFullscreen.addEventListener('click', () => {
-  sbsFullscreen.classList.remove('active');
-  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-});
+sbsFullscreen.addEventListener('click', () => { sbsFullscreen.classList.remove('active'); exitFullscreen(); });
 
 // ── GLASSES-FREE VIEWING ──
 btnWiggle.addEventListener('click', () => openGlassless('wiggle'));
@@ -539,133 +710,80 @@ btnAnaglyph.addEventListener('click', () => openGlassless('anaglyph'));
 
 document.querySelectorAll('#viewer-controls button[data-mode]').forEach(btn => {
   btn.addEventListener('click', () => {
-    const mode = btn.dataset.mode;
-    if (mode === 'close') { closeGlassless(); return; }
-    glasslessMode = mode;
+    const m = btn.dataset.mode;
+    if (m === 'close') { closeGlassless(); return; }
+    glasslessMode = m;
     document.querySelectorAll('#viewer-controls button[data-mode]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     startGlassless();
   });
 });
-
-wiggleSpeed.addEventListener('input', () => {
-  if (glasslessMode === 'wiggle') startGlassless();
-});
+wiggleSpeed.addEventListener('input', () => { if (glasslessMode === 'wiggle') startGlassless(); });
 
 function openGlassless(mode) {
   if (!leftCanvas) return;
   glasslessMode = mode;
   viewerCanvas.classList.add('active');
-
-  // Update button states
-  document.querySelectorAll('#viewer-controls button[data-mode]').forEach(b => {
-    b.classList.toggle('active', b.dataset.mode === mode);
-  });
-
-  // Size canvas to single eye
-  glasslessCvs.width = leftCanvas.width;
-  glasslessCvs.height = leftCanvas.height;
-
+  document.querySelectorAll('#viewer-controls button[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  glasslessCvs.width = leftCanvas.width; glasslessCvs.height = leftCanvas.height;
   startGlassless();
-
-  // Fullscreen
-  const el = viewerCanvas;
-  const rfs = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-  if (rfs) rfs.call(el).catch(() => {});
+  goFullscreen(viewerCanvas);
 }
 
 function closeGlassless() {
-  stopWiggle();
-  viewerCanvas.classList.remove('active');
-  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  stopWiggle(); viewerCanvas.classList.remove('active'); exitFullscreen();
 }
 
 function startGlassless() {
   stopWiggle();
-
   if (glasslessMode === 'wiggle') {
     wiggleFrame = 0;
-    const interval = parseInt(wiggleSpeed.value);
     wiggleTimer = setInterval(() => {
       wiggleFrame = 1 - wiggleFrame;
-      ctx.drawImage(wiggleFrame === 0 ? leftCanvas : rightCanvas, 0, 0);
-    }, interval);
-    // Draw first frame immediately
+      ctx.drawImage(wiggleFrame ? rightCanvas : leftCanvas, 0, 0);
+    }, parseInt(wiggleSpeed.value));
     ctx.drawImage(leftCanvas, 0, 0);
-
   } else if (glasslessMode === 'anaglyph') {
     renderAnaglyph();
-
   } else if (glasslessMode === 'crosseye') {
-    // Show both side by side at half scale for cross-eye free viewing
-    glasslessCvs.width = leftCanvas.width * 2;
-    glasslessCvs.height = leftCanvas.height;
-    // Cross-eye: RIGHT on left, LEFT on right
-    ctx.drawImage(rightCanvas, 0, 0);
-    ctx.drawImage(leftCanvas, leftCanvas.width, 0);
+    glasslessCvs.width = leftCanvas.width * 2; glasslessCvs.height = leftCanvas.height;
+    ctx.drawImage(rightCanvas, 0, 0); ctx.drawImage(leftCanvas, leftCanvas.width, 0);
   }
 }
 
-function stopWiggle() {
-  if (wiggleTimer) { clearInterval(wiggleTimer); wiggleTimer = null; }
-}
+function stopWiggle() { if (wiggleTimer) { clearInterval(wiggleTimer); wiggleTimer = null; } }
 
 function renderAnaglyph() {
-  const w = leftCanvas.width;
-  const h = leftCanvas.height;
-  glasslessCvs.width = w;
-  glasslessCvs.height = h;
-
-  const leftData = leftCanvas.getContext('2d').getImageData(0, 0, w, h);
-  const rightData = rightCanvas.getContext('2d').getImageData(0, 0, w, h);
-  const output = ctx.createImageData(w, h);
-
-  const ld = leftData.data;
-  const rd = rightData.data;
-  const od = output.data;
-
+  const w = leftCanvas.width, h = leftCanvas.height;
+  glasslessCvs.width = w; glasslessCvs.height = h;
+  const ld = leftCanvas.getContext('2d').getImageData(0, 0, w, h).data;
+  const rd = rightCanvas.getContext('2d').getImageData(0, 0, w, h).data;
+  const out = ctx.createImageData(w, h), od = out.data;
   for (let i = 0; i < ld.length; i += 4) {
-    // Left eye → red channel (optimized Dubois-like)
-    const lGray = ld[i] * 0.299 + ld[i+1] * 0.587 + ld[i+2] * 0.114;
-    // Right eye → cyan channels
-    const rGray = rd[i] * 0.299 + rd[i+1] * 0.587 + rd[i+2] * 0.114;
-
-    od[i]   = Math.min(255, lGray);           // R from left
-    od[i+1] = Math.min(255, rd[i+1] * 0.7 + rd[i+2] * 0.3); // G from right
-    od[i+2] = Math.min(255, rd[i+2]);         // B from right
+    const lG = ld[i] * 0.299 + ld[i+1] * 0.587 + ld[i+2] * 0.114;
+    od[i] = Math.min(255, lG);
+    od[i+1] = Math.min(255, rd[i+1] * 0.7 + rd[i+2] * 0.3);
+    od[i+2] = Math.min(255, rd[i+2]);
     od[i+3] = 255;
   }
-
-  ctx.putImageData(output, 0, 0);
+  ctx.putImageData(out, 0, 0);
 }
 
-// ── ESC key to exit ──
+// ── HELPERS ──
+function goFullscreen(el) { (el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen)?.call(el).catch(() => {}); }
+function exitFullscreen() { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); }
+
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    if (sbsFullscreen.classList.contains('active')) {
-      sbsFullscreen.classList.remove('active');
-    }
-    if (viewerCanvas.classList.contains('active')) {
-      closeGlassless();
-    }
+    if (sbsFullscreen.classList.contains('active')) sbsFullscreen.classList.remove('active');
+    if (viewerCanvas.classList.contains('active')) closeGlassless();
+    if (parallaxViewer.classList.contains('active')) closeParallax();
   }
 });
 
-// Exit fullscreen events
-document.addEventListener('fullscreenchange', () => {
-  if (!document.fullscreenElement) {
-    // If we left fullscreen, close viewers
-    if (viewerCanvas.classList.contains('active') && glasslessMode !== 'wiggle') {
-      // Keep open but non-fullscreen is fine
-    }
-  }
-});
-
-// ── TOAST ──
 function showToast(msg) {
-  toast.textContent = msg;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 2500);
+  toastEl.textContent = msg; toastEl.classList.add('show');
+  setTimeout(() => toastEl.classList.remove('show'), 2500);
 }
 </script>
 </body>
